@@ -1,0 +1,6 @@
+name: pay-party-api
+services:
+- name: web
+  github:
+    repo: hansmrtn/pay-party-api
+    branch: main
