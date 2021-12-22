@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -60,6 +61,7 @@ var mongoURI = os.Getenv("CONN_STRING")
 const dbName = "dev-partyDB2"
 
 func Connect() error {
+	fmt.Println(mongoURI)
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return err
