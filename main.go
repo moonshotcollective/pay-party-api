@@ -56,7 +56,7 @@ type Party struct {
 
 var mg MongoInstance
 
-var mongoURI = os.Getenv("CONN_STRING")
+var mongoURI = os.Getenv("DATABASE_URL")
 
 const dbName = "dev-partyDB2"
 
