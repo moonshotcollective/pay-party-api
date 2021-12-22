@@ -223,6 +223,6 @@ func main() {
 		return ctx.SendStatus(204)
 	})
 
-	log.Fatal(app.Listen(fmt.Sprintf(":%s", port)))
+	log.Fatal(app.Listen(fmt.Sprintf("127.0.0.1:%s", port)))
 
 }
