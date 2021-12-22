@@ -57,11 +57,15 @@ type Party struct {
 var mg MongoInstance
 
 var mongoURI = os.Getenv("DATABASE_URL")
-
-const dbName = "dev-partyDB2"
+var dbName = os.Getenv("DATABASE_NAME")
+var dbCollection = os.Getenv("COLLECTION_NAME")
+var port = os.Getenv("PORT")
 
 func Connect() error {
 	fmt.Println(mongoURI)
+	fmt.Println(dbName)
+	fmt.Println(dbCollection)
+	fmt.Println(port)
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return err
@@ -99,7 +103,7 @@ func main() {
 	// get all parties from the db
 	app.Get("/parties", func(ctx *fiber.Ctx) error {
 		query := bson.D{{}}
-		cursor, err := mg.DB.Collection("parties").Find(ctx.Context(), query)
+		cursor, err := mg.DB.Collection(dbCollection).Find(ctx.Context(), query)
 		if err != nil {
 			return ctx.Status(500).SendString(err.Error())
 		}
@@ -113,13 +117,15 @@ func main() {
 
 	// get a party with ObjectId from db
 	app.Get("/party/:id", func(ctx *fiber.Ctx) error {
-
 		partyID, err := primitive.ObjectIDFromHex(
 			ctx.Params("id"),
 		)
+		if err != nil {
+			return ctx.SendStatus(400)
+		}
 		party := new(Party)
 		query := bson.D{{Key: "_id", Value: partyID}}
-		err = mg.DB.Collection("parties").FindOne(ctx.Context(), query).Decode(&party)
+		err = mg.DB.Collection(dbCollection).FindOne(ctx.Context(), query).Decode(&party)
 		if err != nil {
 			// ErrNoDocuments means that the filter did not match any documents in the collection
 			if err == mongo.ErrNoDocuments {
@@ -133,7 +139,7 @@ func main() {
 
 	// Create a party and insert into db
 	app.Post("/party", func(ctx *fiber.Ctx) error {
-		collection := mg.DB.Collection("parties")
+		collection := mg.DB.Collection(dbCollection)
 
 		party := new(Party)
 
@@ -177,7 +183,7 @@ func main() {
 			},
 		}
 
-		err = mg.DB.Collection("parties").FindOneAndUpdate(ctx.Context(), query, update).Err()
+		err = mg.DB.Collection(dbCollection).FindOneAndUpdate(ctx.Context(), query, update).Err()
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return ctx.SendStatus(404)
@@ -203,7 +209,7 @@ func main() {
 
 		// find and delete the party with the given ID
 		query := bson.D{{Key: "_id", Value: partyID}}
-		result, err := mg.DB.Collection("party").DeleteOne(ctx.Context(), &query)
+		result, err := mg.DB.Collection(dbCollection).DeleteOne(ctx.Context(), &query)
 
 		if err != nil {
 			return ctx.SendStatus(500)
