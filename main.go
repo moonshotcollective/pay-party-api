@@ -62,7 +62,7 @@ var dbCollection = os.Getenv("COLLECTION_NAME")
 var port = os.Getenv("PORT")
 
 func Connect() error {
-	fmt.Printf("Connected to DB URL: %s\nOn DB Name: %s\n Collection Name: %s\nPort: %s", mongoURI, dbName, dbCollection, port)
+
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return err
@@ -83,6 +83,8 @@ func Connect() error {
 		DB:     db,
 	}
 
+	log.Printf("Connected to DB URL: %s\nOn DB Name: %s\nCollection Name: %s\nPort: %s", mongoURI, dbName, dbCollection, port)
+
 	return nil
 }
 
@@ -99,6 +101,7 @@ func main() {
 
 	// get all parties from the db
 	app.Get("/parties", func(ctx *fiber.Ctx) error {
+		log.Println("GET /parties")
 		query := bson.D{{}}
 		cursor, err := mg.DB.Collection(dbCollection).Find(ctx.Context(), query)
 		if err != nil {
