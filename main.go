@@ -5,41 +5,63 @@ import (
 	"log"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	"github.com/gofiber/fiber/v2"
 )
 
-// MongoInstance contains the Mongo client and database objects
 type MongoInstance struct {
 	Client *mongo.Client
-	Db     *mongo.Database
+	DB     *mongo.Database
+}
+
+type Data struct {
+	Party  string `json:"party"`
+	Ballot struct {
+		Address string `json:"address"`
+		Votes   string `json:"votes"`
+	} `json:"ballot"`
+}
+type Ballot struct {
+	Signature string `json:"signature"`
+	Data      Data   `json:"data"`
+}
+
+type Config struct {
+	Strategy string `json:"strategy"`
+	Nvotes   int32  `json:"nvotes"`
+}
+
+type Receipt struct {
+	Account string      `json:"account"`
+	Amount  interface{} `json:"amount"` // BigNumbers
+	Token   string      `json:"token"`
+	Txn     string      `json:"txn"`
+}
+type Party struct {
+	ID           string    `json:"id,omitempty" bson:"_id,omitempty"`
+	Name         string    `json:"name"`
+	Description  string    `json:"description"`
+	Config       Config    `json:"config"`
+	Receipts     []Receipt `json:"receipts"` // Yo
+	Participants []string  `json:"participants"`
+	Candidates   []string  `json:"candidates"`
+	Ballots      []Ballot  `json:"ballots"`
 }
 
 var mg MongoInstance
 
-// Database settings (insert your own database name and connection URI)
-const dbName = "fiber_test"
-const mongoURI = "mongodb://user:password@localhost:27017/" + dbName
+const mongoURI = "mongodb+srv://pay-party:4UO9G1DtW237N5E8@db-mongodb-pay-party-c7cecccf.mongo.ondigitalocean.com/dev-partyDB2?authSource=admin&replicaSet=db-mongodb-pay-party&tls=true&tlsCAFile=/Users/hans/Downloads/ca-certificate.crt"
+const dbName = "dev-partyDB2"
 
-// Employee struct
-type Employee struct {
-	ID     string  `json:"id,omitempty" bson:"_id,omitempty"`
-	Name   string  `json:"name"`
-	Salary float64 `json:"salary"`
-	Age    float64 `json:"age"`
-}
-
-// Connect configures the MongoDB client and initializes the database connection.
-// Source: https://www.mongodb.com/blog/post/quick-start-golang--mongodb--starting-and-setup
 func Connect() error {
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	ctx, stop := context.WithTimeout(context.Background(), 30*time.Second)
+	defer stop()
 
 	err = client.Connect(ctx)
 	db := client.Database(dbName)
@@ -50,146 +72,117 @@ func Connect() error {
 
 	mg = MongoInstance{
 		Client: client,
-		Db:     db,
+		DB:     db,
 	}
 
 	return nil
 }
 
 func main() {
-	// Connect to the database
+	// Connect to the db
 	if err := Connect(); err != nil {
 		log.Fatal(err)
 	}
 
-	// Create a Fiber app
+	// Create Fiber App
 	app := fiber.New()
 
-	// Get all employee records from MongoDB
-	// Docs: https://docs.mongodb.com/manual/reference/command/find/
-	app.Get("/employee", func(c *fiber.Ctx) error {
-		// get all records as a cursor
+	app.Use(cors.New())
+
+	// get all parties from the db
+	app.Get("/parties", func(ctx *fiber.Ctx) error {
 		query := bson.D{{}}
-		cursor, err := mg.Db.Collection("employees").Find(c.Context(), query)
+		cursor, err := mg.DB.Collection("parties").Find(ctx.Context(), query)
 		if err != nil {
-			return c.Status(500).SendString(err.Error())
+			return ctx.Status(500).SendString(err.Error())
 		}
-
-		var employees []Employee = make([]Employee, 0)
-
-		// iterate the cursor and decode each item into an Employee
-		if err := cursor.All(c.Context(), &employees); err != nil {
-			return c.Status(500).SendString(err.Error())
-
+		var parties []Party = make([]Party, 0)
+		// iterate the cursor and decode each item into a party
+		if err := cursor.All(ctx.Context(), &parties); err != nil {
+			return ctx.Status(500).SendString(err.Error())
 		}
-		// return employees list in JSON format
-		return c.JSON(employees)
+		return ctx.JSON(parties)
 	})
 
-	// Insert a new employee into MongoDB
-	// Docs: https://docs.mongodb.com/manual/reference/command/insert/
-	app.Post("/employee", func(c *fiber.Ctx) error {
-		collection := mg.Db.Collection("employees")
+	// get a party with ObjectId from db
+	app.Get("/party/:id", func(ctx *fiber.Ctx) error {
 
-		// New Employee struct
-		employee := new(Employee)
-		// Parse body into struct
-		if err := c.BodyParser(employee); err != nil {
-			return c.Status(400).SendString(err.Error())
-		}
-
-		// force MongoDB to always set its own generated ObjectIDs
-		employee.ID = ""
-
-		// insert the record
-		insertionResult, err := collection.InsertOne(c.Context(), employee)
-		if err != nil {
-			return c.Status(500).SendString(err.Error())
-		}
-
-		// get the just inserted record in order to return it as response
-		filter := bson.D{{Key: "_id", Value: insertionResult.InsertedID}}
-		createdRecord := collection.FindOne(c.Context(), filter)
-
-		// decode the Mongo record into Employee
-		createdEmployee := &Employee{}
-		createdRecord.Decode(createdEmployee)
-
-		// return the created Employee in JSON format
-		return c.Status(201).JSON(createdEmployee)
-	})
-
-	// Update an employee record in MongoDB
-	// Docs: https://docs.mongodb.com/manual/reference/command/findAndModify/
-	app.Put("/employee/:id", func(c *fiber.Ctx) error {
-		idParam := c.Params("id")
-		employeeID, err := primitive.ObjectIDFromHex(idParam)
-
-		// the provided ID might be invalid ObjectID
-		if err != nil {
-			return c.SendStatus(400)
-		}
-
-		employee := new(Employee)
-		// Parse body into struct
-		if err := c.BodyParser(employee); err != nil {
-			return c.Status(400).SendString(err.Error())
-		}
-
-		// Find the employee and update its data
-		query := bson.D{{Key: "_id", Value: employeeID}}
-		update := bson.D{
-			{Key: "$set",
-				Value: bson.D{
-					{Key: "name", Value: employee.Name},
-					{Key: "age", Value: employee.Age},
-					{Key: "salary", Value: employee.Salary},
-				},
-			},
-		}
-		err = mg.Db.Collection("employees").FindOneAndUpdate(c.Context(), query, update).Err()
-
+		partyID, err := primitive.ObjectIDFromHex(
+			ctx.Params("id"),
+		)
+		party := new(Party)
+		query := bson.D{{Key: "_id", Value: partyID}}
+		err = mg.DB.Collection("parties").FindOne(ctx.Context(), query).Decode(&party)
 		if err != nil {
 			// ErrNoDocuments means that the filter did not match any documents in the collection
 			if err == mongo.ErrNoDocuments {
-				return c.SendStatus(404)
+				return ctx.SendStatus(404)
 			}
-			return c.SendStatus(500)
+			return ctx.SendStatus(500)
 		}
 
-		// return the updated employee
-		employee.ID = idParam
-		return c.Status(200).JSON(employee)
+		return ctx.Status(200).JSON(party)
 	})
 
-	// Delete an employee from MongoDB
-	// Docs: https://docs.mongodb.com/manual/reference/command/delete/
-	app.Delete("/employee/:id", func(c *fiber.Ctx) error {
-		employeeID, err := primitive.ObjectIDFromHex(
-			c.Params("id"),
+	// Create a party and insert into db
+	app.Post("/party", func(ctx *fiber.Ctx) error {
+		collection := mg.DB.Collection("parties")
+
+		party := new(Party)
+
+		if err := ctx.BodyParser(party); err != nil {
+			return ctx.Status(400).SendString(err.Error())
+		}
+		// ensure mongo always sets generated ObjectIDs
+		party.ID = ""
+
+		insertRes, err := collection.InsertOne(ctx.Context(), party)
+		if err != nil {
+			return ctx.Status(500).SendString(err.Error())
+		}
+
+		filter := bson.D{{Key: "_id", Value: insertRes.InsertedID}}
+		createdRecord := collection.FindOne(ctx.Context(), filter)
+		createdParty := &Party{}
+		createdRecord.Decode(createdParty)
+
+		return ctx.Status(200).JSON(createdParty)
+
+	})
+
+	app.Put("/party/:id", func(ctx *fiber.Ctx) error {
+		partyID, err := primitive.ObjectIDFromHex(
+			ctx.Params("id"),
 		)
-
-		// the provided ID might be invalid ObjectID
 		if err != nil {
-			return c.SendStatus(400)
+			return ctx.SendStatus(400)
+		}
+		party := new(Party)
+		if err := ctx.BodyParser(party); err != nil {
+			return ctx.Status(400).SendString(err.Error())
+		}
+		query := bson.D{{Key: "_id", Value: partyID}}
+		update := bson.D{
+			{Key: "$set",
+				Value: bson.D{
+					{Key: "ballots", Value: party.Ballots},
+				},
+			},
 		}
 
-		// find and delete the employee with the given ID
-		query := bson.D{{Key: "_id", Value: employeeID}}
-		result, err := mg.Db.Collection("employees").DeleteOne(c.Context(), &query)
-
+		err = mg.DB.Collection("parties").FindOneAndUpdate(ctx.Context(), query, update).Err()
 		if err != nil {
-			return c.SendStatus(500)
+			if err == mongo.ErrNoDocuments {
+				return ctx.SendStatus(404)
+			}
+			return ctx.SendStatus(500)
 		}
+		// return updated ObjectId
+		party.ID = ctx.Params("id")
+		return ctx.Status(200).JSON(party)
 
-		// the employee might not exist
-		if result.DeletedCount < 1 {
-			return c.SendStatus(404)
-		}
-
-		// the record was deleted
-		return c.SendStatus(204)
 	})
 
 	log.Fatal(app.Listen(":3000"))
+
 }
