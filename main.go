@@ -97,7 +97,10 @@ func main() {
 	// Create Fiber App
 	app := fiber.New()
 
-	app.Use(cors.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowHeaders: "Origin, Content-Type, Accept",
+	}))
 
 	// get all parties from the db
 	app.Get("/parties", func(ctx *fiber.Ctx) error {
