@@ -105,6 +105,7 @@ func main() {
 		query := bson.D{{}}
 		cursor, err := mg.DB.Collection(dbCollection).Find(ctx.Context(), query)
 		if err != nil {
+			log.Fatal(err.Error())
 			return ctx.Status(500).SendString(err.Error())
 		}
 		var parties []Party = make([]Party, 0)
