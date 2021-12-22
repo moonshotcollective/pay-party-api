@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -54,11 +55,15 @@ type Party struct {
 
 var mg MongoInstance
 
-const mongoURI = "mongodb+srv://pay-party:4UO9G1DtW237N5E8@db-mongodb-pay-party-c7cecccf.mongo.ondigitalocean.com/dev-partyDB2?authSource=admin&replicaSet=db-mongodb-pay-party&tls=true&tlsCAFile=/Users/hans/Downloads/ca-certificate.crt"
+var mongoURI = os.Getenv("CONN_STRING")
+
 const dbName = "dev-partyDB2"
 
 func Connect() error {
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
+	if err != nil {
+		return err
+	}
 
 	ctx, stop := context.WithTimeout(context.Background(), 30*time.Second)
 	defer stop()
@@ -181,6 +186,33 @@ func main() {
 		party.ID = ctx.Params("id")
 		return ctx.Status(200).JSON(party)
 
+	})
+
+	// Delete party
+	// Docs: https://docs.mongodb.com/manual/reference/command/delete/
+	app.Delete("/party/:id", func(ctx *fiber.Ctx) error {
+		partyID, err := primitive.ObjectIDFromHex(
+			ctx.Params("id"),
+		)
+
+		if err != nil {
+			return ctx.SendStatus(400)
+		}
+
+		// find and delete the party with the given ID
+		query := bson.D{{Key: "_id", Value: partyID}}
+		result, err := mg.DB.Collection("party").DeleteOne(ctx.Context(), &query)
+
+		if err != nil {
+			return ctx.SendStatus(500)
+		}
+
+		if result.DeletedCount < 1 {
+			return ctx.SendStatus(404)
+		}
+
+		// the record was deleted
+		return ctx.SendStatus(204)
 	})
 
 	log.Fatal(app.Listen(":3000"))
