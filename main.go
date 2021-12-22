@@ -83,11 +83,6 @@ func Connect() error {
 		DB:     db,
 	}
 
-	err = mg.DB.CreateCollection(ctx, dbName)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
