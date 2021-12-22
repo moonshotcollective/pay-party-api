@@ -62,10 +62,7 @@ var dbCollection = os.Getenv("COLLECTION_NAME")
 var port = os.Getenv("PORT")
 
 func Connect() error {
-	fmt.Println(mongoURI)
-	fmt.Println(dbName)
-	fmt.Println(dbCollection)
-	fmt.Println(port)
+	fmt.Printf("Connected to DB URL: %s\nOn DB Name: %s\n Collection Name: %s\nPort: %s", mongoURI, dbName, dbCollection, port)
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return err
@@ -223,6 +220,6 @@ func main() {
 		return ctx.SendStatus(204)
 	})
 
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(fmt.Sprintf(":%s", port)))
 
 }
