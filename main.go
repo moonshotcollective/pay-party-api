@@ -62,7 +62,7 @@ var port = os.Getenv("PORT")
 
 func Connect() error {
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI).SetDirect(true))
+	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI).SetReplicaSet(dbName))
 	if err != nil {
 		return err
 	}
