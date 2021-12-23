@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -63,8 +62,7 @@ var port = os.Getenv("PORT")
 
 func Connect() error {
 
-	fmt.Println(mongoURI)
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
+	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI).SetDirect(true))
 	if err != nil {
 		return err
 	}
