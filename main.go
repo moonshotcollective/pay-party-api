@@ -245,6 +245,6 @@ func main() {
 		return ctx.SendStatus(204)
 	})
 
-	log.Fatal(app.Listen(":8080"))
+	log.Fatal(app.Listen(":" + port))
 
 }
