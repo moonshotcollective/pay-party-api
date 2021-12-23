@@ -64,8 +64,6 @@ var connString = os.Getenv("CONN_STRING")
 
 func Connect() error {
 
-	fmt.Println(connString + cert)
-
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return err
@@ -87,6 +85,7 @@ func Connect() error {
 	}
 
 	log.Printf("Connected to DB URL: %s\nOn DB Name: %s\nCollection Name: %s\nPort: %s", mongoURI, dbName, dbCollection, port)
+	log.Printf("Contructed Connection String: %s", (connString + cert))
 
 	return nil
 }
