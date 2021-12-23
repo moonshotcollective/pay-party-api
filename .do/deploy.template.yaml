@@ -1,7 +1,0 @@
-spec:
-  name: pay-party-api
-  services:
-  - name: web
-    git:
-      branch: main
-      repo_clone_url: https://github.com/hansmrtn/pay-party-api.git
