@@ -59,8 +59,12 @@ var mongoURI = os.Getenv("DATABASE_URL")
 var dbName = os.Getenv("DATABASE_NAME")
 var dbCollection = os.Getenv("COLLECTION_NAME")
 var port = os.Getenv("PORT")
+var cert = os.Getenv("CA_CERT")
+var connString = os.Getenv("CONN_STRING")
 
 func Connect() error {
+
+	fmt.Println(connString + cert)
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
 	if err != nil {
