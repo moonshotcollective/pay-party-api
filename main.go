@@ -55,7 +55,7 @@ type Party struct {
 
 var mg MongoInstance
 
-var mongoURI = os.Getenv("DATABASE_URL")
+var mongoURI = "mongodb+srv://doapps-148ccc10-e8d4-4716-946e-bb2a5ba60dd5:67UQ8cf9rJ130VL5@db-mongodb-sfo3-pay-party-30d250ca.mongo.ondigitalocean.com/admin?authSource=admin&tls=true" //os.Getenv("DATABASE_URL")
 var dbName = os.Getenv("DATABASE_NAME")
 var dbHost = os.Getenv("DATABASE_HOST")
 var dbCollection = os.Getenv("DATABASE_COLLECTION")
@@ -67,7 +67,8 @@ var port = os.Getenv("PORT")
 
 func Connect() error {
 
-	URI := mongoURI + "&tlsCAFile=ca_certficate.crt"
+	URI := mongoURI + "&tlsCAFile=ca_certificate.crt"
+	log.Printf("Connecting to URI: %s", URI)
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(URI))
 	if err != nil {
