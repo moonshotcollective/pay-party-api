@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -68,7 +69,7 @@ var port = os.Getenv("PORT")
 
 func Connect() error {
 
-	URI := mongoURI + "&tlsCAFile=mongodb.ca.crt" //+ dbCert
+	URI := mongoURI + "&tlsCAFile=ca.crt" //+ dbCert
 	// log.Printf("Connecting to URI: %s", URI)
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(URI))
@@ -99,6 +100,14 @@ func Connect() error {
 func main() {
 
 	log.Printf("mongodb+srv://%s:%s@%s:%s/%s", dbUser, dbPass, dbHost, dbPort, dbParams)
+
+	var c2 = strings.ReplaceAll(dbCert, " ", "\n")
+	var c3 = strings.Replace(c2, "BEGIN\n", "BEGIN ", 1)
+	var c4 = strings.Replace(c3, "END\n", "END ", 1)
+
+	file, err := os.Create("ca.crt")
+	file.WriteString(c4)
+	defer file.Close()
 
 	// Connect to the db
 	if err := Connect(); err != nil {
