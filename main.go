@@ -63,11 +63,12 @@ var dbPort = os.Getenv("DATABASE_PORT")
 var dbUser = os.Getenv("DATABASE_USERNAME")
 var dbPass = os.Getenv("DATABASE_PASSWORD")
 var dbParams = os.Getenv("DATABASE_PARAMS")
+var dbCert = os.Getenv("CA_CERT")
 var port = os.Getenv("PORT")
 
 func Connect() error {
 
-	URI := mongoURI + "&tlsCAFile=ca_certificate.crt"
+	URI := mongoURI + "&tlsCAFile=" + dbCert
 	log.Printf("Connecting to URI: %s", URI)
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(URI))
