@@ -60,23 +60,11 @@ var mongoURI = os.Getenv("DATABASE_URL")
 var dbName = os.Getenv("DATABASE_NAME")
 var dbCollection = os.Getenv("COLLECTION_NAME")
 var port = os.Getenv("PORT")
-var cert = os.Getenv("CA_CERT")
 
 func Connect() error {
 
-	file, err := os.CreateTemp("", "tmpcert-")
-	defer file.Close()
-	defer os.Remove(file.Name())
-	var data = []byte(cert)
-
-	_, err = file.Write(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var URI = mongoURI + file.Name()
-
-	client, err := mongo.NewClient(options.Client().ApplyURI(URI))
+	fmt.Println(mongoURI)
+	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return err
 	}
@@ -102,6 +90,7 @@ func Connect() error {
 }
 
 func main() {
+
 	// Connect to the db
 	if err := Connect(); err != nil {
 		log.Fatal(err)
@@ -237,6 +226,6 @@ func main() {
 		return ctx.SendStatus(204)
 	})
 
-	log.Fatal(app.Listen(fmt.Sprintf("0.0.0.0:%s", port)))
+	log.Fatal(app.Listen(":8080"))
 
 }
