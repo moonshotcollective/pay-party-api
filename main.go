@@ -56,14 +56,26 @@ type Party struct {
 
 var mg MongoInstance
 
-var mongoURI = os.Getenv("DATABASE_URL")
-var dbName = os.Getenv("DATABASE_NAME")
-var dbCollection = os.Getenv("COLLECTION_NAME")
-var port = os.Getenv("PORT")
-
 func Connect() error {
+	var mongoURI = os.Getenv("DATABASE_URL")
+	var dbName = os.Getenv("DATABASE_NAME")
+	var dbCollection = os.Getenv("COLLECTION_NAME")
+	var port = os.Getenv("PORT")
+	var cert = os.Getenv("CA_CERT")
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
+	file, err := os.CreateTemp("", "tmpcert-")
+	defer file.Close()
+	defer os.Remove(file.Name())
+	var data = []byte(cert)
+
+	_, err = file.Write(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var URI = mongoURI + file.Name()
+
+	client, err := mongo.NewClient(options.Client().ApplyURI(URI))
 	if err != nil {
 		return err
 	}
@@ -97,10 +109,7 @@ func main() {
 	// Create Fiber App
 	app := fiber.New()
 
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept",
-	}))
+	app.Use(cors.New())
 
 	// get all parties from the db
 	app.Get("/parties", func(ctx *fiber.Ctx) error {
