@@ -106,6 +106,9 @@ func main() {
 	var c4 = strings.Replace(c3, "END\n", "END ", 1)
 
 	file, err := os.Create("ca.crt")
+	if err != nil {
+		log.Fatal(err)
+	}
 	file.WriteString(c4)
 	defer file.Close()
 
