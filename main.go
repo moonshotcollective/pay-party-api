@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -87,17 +86,6 @@ func Connect() error {
 }
 
 func main() {
-
-	var c2 = strings.ReplaceAll(dbCert, " ", "\n")
-	var c3 = strings.Replace(c2, "BEGIN\n", "BEGIN ", 1)
-	var c4 = strings.Replace(c3, "END\n", "END ", 1)
-
-	file, err := os.Create("ca.crt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	file.WriteString(c4)
-	defer file.Close()
 
 	// Connect to the db
 	if err := Connect(); err != nil {
