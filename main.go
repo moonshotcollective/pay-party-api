@@ -67,7 +67,9 @@ var port = os.Getenv("PORT")
 
 func Connect() error {
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
+	URI := mongoURI + "&tlsCAFile=ca_certficate.crt"
+
+	client, err := mongo.NewClient(options.Client().ApplyURI(URI))
 	if err != nil {
 		return err
 	}
