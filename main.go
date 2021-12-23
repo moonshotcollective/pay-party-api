@@ -57,12 +57,17 @@ var mg MongoInstance
 
 var mongoURI = os.Getenv("DATABASE_URL")
 var dbName = os.Getenv("DATABASE_NAME")
-var dbCollection = os.Getenv("COLLECTION_NAME")
+var dbHost = os.Getenv("DATABASE_HOST")
+var dbCollection = os.Getenv("DATABASE_COLLECTION")
+var dbPort = os.Getenv("DATABASE_PORT")
+var dbUser = os.Getenv("DATABASE_USERNAME")
+var dbPass = os.Getenv("DATABASE_PASSWORD")
+var dbParams = os.Getenv("DATABASE_PARAMS")
 var port = os.Getenv("PORT")
 
 func Connect() error {
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI).SetReplicaSet(dbName))
+	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return err
 	}
@@ -82,12 +87,14 @@ func Connect() error {
 		DB:     db,
 	}
 
-	log.Printf("Connected to DB URL: %s\nOn DB Name: %s\nCollection Name: %s\nPort: %s", mongoURI, dbName, dbCollection, port)
+	// log.Printf("Connected to DB URL: %s\nOn DB Name: %s\nCollection Name: %s\nPort: %s", mongoURI, dbName, dbCollection, port)
 
 	return nil
 }
 
 func main() {
+
+	log.Printf("mongodb+srv://%s:%s@%s:%s/%s", dbUser, dbPass, dbHost, dbPort, dbParams)
 
 	// Connect to the db
 	if err := Connect(); err != nil {
