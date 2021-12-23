@@ -56,12 +56,13 @@ type Party struct {
 
 var mg MongoInstance
 
+var mongoURI = os.Getenv("DATABASE_URL")
+var dbName = os.Getenv("DATABASE_NAME")
+var dbCollection = os.Getenv("COLLECTION_NAME")
+var port = os.Getenv("PORT")
+var cert = os.Getenv("CA_CERT")
+
 func Connect() error {
-	var mongoURI = os.Getenv("DATABASE_URL")
-	var dbName = os.Getenv("DATABASE_NAME")
-	var dbCollection = os.Getenv("COLLECTION_NAME")
-	var port = os.Getenv("PORT")
-	var cert = os.Getenv("CA_CERT")
 
 	file, err := os.CreateTemp("", "tmpcert-")
 	defer file.Close()
