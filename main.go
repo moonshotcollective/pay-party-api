@@ -69,8 +69,8 @@ var port = os.Getenv("PORT")
 
 func Connect() error {
 
-	URI := mongoURI + "&tlsCAFile=ca.crt" //+ dbCert
-	log.Printf("Connecting to URI: %s", URI)
+	URI := mongoURI //+ "&tlsCAFile=ca.crt" //+ dbCert
+	// log.Printf("Connecting to URI: %s", URI)
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(URI))
 	if err != nil {
