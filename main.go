@@ -56,7 +56,7 @@ type Party struct {
 
 var mg MongoInstance
 
-var mongoURI = "mongodb+srv://doapps-148ccc10-e8d4-4716-946e-bb2a5ba60dd5:67UQ8cf9rJ130VL5@db-mongodb-sfo3-pay-party-30d250ca.mongo.ondigitalocean.com/admin?authSource=admin&tls=true" //os.Getenv("DATABASE_URL")
+var mongoURI = os.Getenv("DATABASE_URL")
 var dbName = os.Getenv("DATABASE_NAME")
 var dbHost = os.Getenv("DATABASE_HOST")
 var dbCollection = os.Getenv("DATABASE_COLLECTION")
@@ -98,8 +98,6 @@ func Connect() error {
 }
 
 func main() {
-
-	log.Printf("mongodb+srv://%s:%s@%s:%s/%s", dbUser, dbPass, dbHost, dbPort, dbParams)
 
 	var c2 = strings.ReplaceAll(dbCert, " ", "\n")
 	var c3 = strings.Replace(c2, "BEGIN\n", "BEGIN ", 1)
