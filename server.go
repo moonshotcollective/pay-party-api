@@ -170,5 +170,8 @@ func main() {
 	app.Post("/party", NewParty)
 	app.Put("/party/:id", UpdateParty)
 	app.Delete("/party/:id", DeleteParty)
-	log.Fatal(app.Listen(":" + port))
+	err := app.Listen(":" + port)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
