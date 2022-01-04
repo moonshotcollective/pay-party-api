@@ -121,6 +121,7 @@ func UpdateParty(ctx *fiber.Ctx) error {
 		{Key: "$set",
 			Value: bson.D{
 				{Key: "ballots", Value: party.Ballots},
+				{Key: "receipts", Value: party.Receipts},
 			},
 		},
 	}
