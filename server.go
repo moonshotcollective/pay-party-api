@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/hansmrtn/pay-party-api/models"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -20,15 +21,24 @@ type MongoInstance struct {
 	DB     *mongo.Database
 }
 
-// Get env variables
-var mongoURI = os.Getenv("DATABASE_URL")
-var dbCollection = os.Getenv("DATABASE_COLLECTION")
-var dbName = os.Getenv("DATABASE_NAME")
-var port = os.Getenv("PORT")
+var mongoURI string
+var dbCollection string
+var dbName string
+var port string
 
 var mg MongoInstance
 
 func init() {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Print("Error loading .env file")
+	}
+	// Get env variables
+	mongoURI = os.Getenv("DATABASE_URL")
+	dbCollection = os.Getenv("DATABASE_COLLECTION")
+	dbName = os.Getenv("DATABASE_NAME")
+	port = os.Getenv("PORT")
+
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		log.Fatal(err)
