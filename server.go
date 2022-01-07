@@ -58,7 +58,6 @@ func init() {
 
 // Get all parties
 func GetAllParties(ctx *fiber.Ctx) error {
-	log.Println("GET /parties")
 	query := bson.D{{}}
 	cursor, err := mg.DB.Collection(dbCollection).Find(ctx.Context(), query)
 	if err != nil {
@@ -114,7 +113,7 @@ func NewParty(ctx *fiber.Ctx) error {
 	return ctx.Status(200).JSON(createdParty)
 }
 
-// Update a party
+// Update a party -- Deprecated
 func UpdateParty(ctx *fiber.Ctx) error {
 	partyID, err := primitive.ObjectIDFromHex(
 		ctx.Params("id"),
@@ -145,6 +144,66 @@ func UpdateParty(ctx *fiber.Ctx) error {
 	// return updated ObjectId
 	party.ID = ctx.Params("id")
 	return ctx.Status(200).JSON(party)
+}
+
+// Push a txn receipt to the party receipts
+func AddPartyReceipt(ctx *fiber.Ctx) error {
+	partyID, err := primitive.ObjectIDFromHex(
+		ctx.Params("id"),
+	)
+	if err != nil {
+		return ctx.SendStatus(400)
+	}
+	receipt := new(models.Receipt)
+	if err := ctx.BodyParser(receipt); err != nil {
+		return ctx.Status(400).SendString(err.Error())
+	}
+	query := bson.D{{Key: "_id", Value: partyID}}
+	update := bson.D{
+		{Key: "$push",
+			Value: bson.D{
+				{Key: "receipts", Value: receipt},
+			},
+		},
+	}
+	err = mg.DB.Collection(dbCollection).FindOneAndUpdate(ctx.Context(), query, update).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return ctx.SendStatus(404)
+		}
+		return ctx.SendStatus(500)
+	}
+	return ctx.Status(200).JSON(receipt)
+}
+
+// Push a ballot to party ballots array
+func AddPartyBallot(ctx *fiber.Ctx) error {
+	partyID, err := primitive.ObjectIDFromHex(
+		ctx.Params("id"),
+	)
+	if err != nil {
+		return ctx.SendStatus(400)
+	}
+	ballot := new(models.Ballot)
+	if err := ctx.BodyParser(ballot); err != nil {
+		return ctx.Status(400).SendString(err.Error())
+	}
+	query := bson.D{{Key: "_id", Value: partyID}}
+	update := bson.D{
+		{Key: "$push",
+			Value: bson.D{
+				{Key: "ballots", Value: ballot},
+			},
+		},
+	}
+	err = mg.DB.Collection(dbCollection).FindOneAndUpdate(ctx.Context(), query, update).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return ctx.SendStatus(404)
+		}
+		return ctx.SendStatus(500)
+	}
+	return ctx.Status(200).JSON(ballot)
 }
 
 // Delete party
@@ -179,7 +238,8 @@ func main() {
 	app.Get("/parties", GetAllParties)
 	app.Get("/party/:id", GetParty)
 	app.Post("/party", NewParty)
-	app.Put("/party/:id", UpdateParty)
+	app.Put("/party/:id/vote", AddPartyBallot)
+	app.Put("/party/:id/distribute", AddPartyReceipt)
 	app.Delete("/party/:id", DeleteParty)
 	err := app.Listen(":" + port)
 	if err != nil {
