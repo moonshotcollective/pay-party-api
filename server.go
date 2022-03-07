@@ -206,6 +206,36 @@ func AddPartyBallot(ctx *fiber.Ctx) error {
 	return ctx.Status(200).JSON(ballot)
 }
 
+// Push a Note to the party notes array
+func AddPartyNote(ctx *fiber.Ctx) error {
+	partyID, err := primitive.ObjectIDFromHex(
+		ctx.Params("id"),
+	)
+	if err != nil {
+		return ctx.SendStatus(400)
+	}
+	note := new(models.Note)
+	if err := ctx.BodyParser(note); err != nil {
+		return ctx.Status(400).SendString(err.Error())
+	}
+	query := bson.D{{Key: "_id", Value: partyID}}
+	update := bson.D{
+		{Key: "$push",
+			Value: bson.D{
+				{Key: "notes", Value: note},
+			},
+		},
+	}
+	err = mg.DB.Collection(dbCollection).FindOneAndUpdate(ctx.Context(), query, update).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return ctx.SendStatus(404)
+		}
+		return ctx.SendStatus(500)
+	}
+	return ctx.Status(200).JSON(note)
+}
+
 // Delete party
 // Docs: https://docs.mongodb.com/manual/reference/command/delete/
 func DeleteParty(ctx *fiber.Ctx) error {
@@ -240,6 +270,7 @@ func main() {
 	app.Post("/party", NewParty)
 	app.Put("/party/:id/vote", AddPartyBallot)
 	app.Put("/party/:id/distribute", AddPartyReceipt)
+	app.Put("/party/:id/note", AddPartyNote)
 	app.Delete("/party/:id", DeleteParty)
 	err := app.Listen(":" + port)
 	if err != nil {
