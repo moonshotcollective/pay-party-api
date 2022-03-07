@@ -1,10 +1,10 @@
 package models
 
 type Data struct {
-	Party  string `json:"party"`
 	Ballot struct {
-		Votes     string `json:"votes"`
-		Timestamp string `json:"timestamp"`
+		Votes          string `json:"votes"`
+		Timestamp      string `json:"timestamp"`
+		PartySignature string `json:"partySignature"`
 	} `json:"ballot"`
 }
 
@@ -16,6 +16,7 @@ type Ballot struct {
 type Config struct {
 	Strategy string `json:"strategy"`
 	Nvotes   int32  `json:"nvotes"`
+	ChainId  uint16 `json:"chainId"`
 }
 
 type Receipt struct {
